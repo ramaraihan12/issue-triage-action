@@ -1,0 +1,36 @@
+name: triage
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue number to triage
+        required: true
+      dry-run:
+        description: Only log what would happen
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - if: env.GEMINI_API_KEY == ''
+        run: echo "::notice::GEMINI_API_KEY is not set, skipping triage."
+
+      - if: env.GEMINI_API_KEY != ''
+        uses: ./
+        with:
+          api-key: ${{ env.GEMINI_API_KEY }}
+          issue-number: ${{ inputs.issue }}
+          dry-run: ${{ inputs.dry-run || false }}
