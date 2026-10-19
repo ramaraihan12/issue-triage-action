@@ -8,6 +8,19 @@ describe('sanitize', () => {
     );
   });
 
+  it('drops links without a scheme', () => {
+    expect(sanitize('download the fix from www.evil-example.com/patch now')).toBe(
+      'download the fix from now',
+    );
+    expect(sanitize('see WWW.evil-example.com or evil-example.com/fix?x=1')).toBe('see or');
+  });
+
+  it('keeps file names and paths', () => {
+    expect(sanitize('your mdsite.config.yml and the files under content/blog')).toBe(
+      'your mdsite.config.yml and the files under content/blog',
+    );
+  });
+
   it('collapses whitespace', () => {
     expect(sanitize('  the   full\nerror output ')).toBe('the full error output');
   });
