@@ -27,7 +27,8 @@ const fixtureSchema = z.object({
   ),
 });
 
-const USAGE = 'usage: pnpm triage:local <fixture.json> [--provider] [--model] [--base-url]';
+const USAGE =
+  'usage: pnpm triage:local <fixture.json> [--provider] [--model] [--base-url] [--verbose]';
 
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
@@ -56,10 +57,11 @@ async function main(): Promise<void> {
   }
   const fixture = parsed.data;
   const { verbose, ...inputs } = values;
-  const flags: Record<string, string | undefined> = {
-    ...inputs,
-    'api-key': process.env.TRIAGE_API_KEY,
-  };
+  const apiKey = process.env.TRIAGE_API_KEY;
+  if (!apiKey && inputs.provider && inputs.provider !== 'openai') {
+    throw new Error(`set TRIAGE_API_KEY for the ${inputs.provider} provider`);
+  }
+  const flags: Record<string, string | undefined> = { ...inputs, 'api-key': apiKey };
   const config = readConfig((name) => flags[name] ?? '');
 
   const tracker: IssueTracker = {
