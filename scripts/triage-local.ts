@@ -27,71 +27,88 @@ const fixtureSchema = z.object({
   ),
 });
 
-const { values, positionals } = parseArgs({
-  allowPositionals: true,
-  options: {
-    provider: { type: 'string' },
-    model: { type: 'string' },
-    'base-url': { type: 'string' },
-    'reasoning-effort': { type: 'string' },
-    mode: { type: 'string' },
-    'min-confidence': { type: 'string' },
-    'timeout-seconds': { type: 'string' },
-    verbose: { type: 'boolean', default: false },
-  },
-});
+const USAGE = 'usage: pnpm triage:local <fixture.json> [--provider] [--model] [--base-url]';
 
-const [fixturePath] = positionals;
-if (!fixturePath) {
-  console.error('usage: pnpm triage:local <fixture.json> [--provider] [--model] [--base-url]');
-  process.exit(2);
+async function main(): Promise<void> {
+  const { values, positionals } = parseArgs({
+    allowPositionals: true,
+    options: {
+      provider: { type: 'string' },
+      model: { type: 'string' },
+      'base-url': { type: 'string' },
+      'reasoning-effort': { type: 'string' },
+      mode: { type: 'string' },
+      'min-confidence': { type: 'string' },
+      'timeout-seconds': { type: 'string' },
+      verbose: { type: 'boolean', default: false },
+    },
+  });
+
+  const [fixturePath] = positionals;
+  if (!fixturePath) {
+    console.error(USAGE);
+    process.exit(2);
+  }
+
+  const parsed = fixtureSchema.safeParse(JSON.parse(await readFile(fixturePath, 'utf8')));
+  if (!parsed.success) {
+    throw new Error(`${fixturePath} is not a valid fixture\n${z.prettifyError(parsed.error)}`);
+  }
+  const fixture = parsed.data;
+  const { verbose, ...inputs } = values;
+  const flags: Record<string, string | undefined> = {
+    ...inputs,
+    'api-key': process.env.TRIAGE_API_KEY,
+  };
+  const config = readConfig((name) => flags[name] ?? '');
+
+  const tracker: IssueTracker = {
+    listLabels: () => Promise.resolve(fixture.labels),
+    listOpenIssues: () => Promise.resolve(fixture.openIssues),
+    hasTriageComment: () => Promise.resolve(false),
+    addLabels: () => Promise.reject(new Error('the local runner never writes')),
+    createComment: () => Promise.reject(new Error('the local runner never writes')),
+  };
+
+  const model = createModel(config.model);
+  const log = {
+    info: (message: string) => {
+      console.log(message);
+    },
+    warning: (message: string) => {
+      console.warn(`warning: ${message}`);
+    },
+    debug: (message: string) => {
+      if (verbose) console.log(message);
+    },
+  };
+
+  const started = performance.now();
+  const result = await triageIssue(
+    { ...fixture.issue, authorIsBot: false },
+    { tracker, model, log },
+    { ...config.triage, dryRun: true },
+  );
+  const seconds = ((performance.now() - started) / 1000).toFixed(1);
+
+  console.log(`\n#${fixture.issue.number} ${fixture.issue.title}`);
+  console.log(`model: ${model.id} (${seconds}s)`);
+  if (result.status === 'skipped') {
+    console.log(`skipped: ${result.reason}`);
+  } else {
+    const { plan } = result;
+    console.log(`category: ${plan.category} (confidence ${plan.confidence})`);
+    console.log(`labels: ${plan.labels.join(', ') || 'none'}`);
+    console.log(`duplicates: ${plan.duplicates.map((d) => `#${d.number}`).join(', ') || 'none'}`);
+    console.log(plan.comment ? `comment:\n\n${plan.comment}` : 'comment: none');
+  }
 }
 
-const fixture = fixtureSchema.parse(JSON.parse(await readFile(fixturePath, 'utf8')));
-const { verbose, ...inputs } = values;
-const flags: Record<string, string | undefined> = {
-  ...inputs,
-  'api-key': process.env.TRIAGE_API_KEY,
-};
-const config = readConfig((name) => flags[name] ?? '');
-
-const tracker: IssueTracker = {
-  listLabels: () => Promise.resolve(fixture.labels),
-  listOpenIssues: () => Promise.resolve(fixture.openIssues),
-  hasTriageComment: () => Promise.resolve(false),
-  addLabels: () => Promise.reject(new Error('the local runner never writes')),
-  createComment: () => Promise.reject(new Error('the local runner never writes')),
-};
-
-const model = createModel(config.model);
-const log = {
-  info: (message: string) => {
-    console.log(message);
-  },
-  warning: (message: string) => {
-    console.warn(`warning: ${message}`);
-  },
-  debug: (message: string) => {
-    if (verbose) console.log(message);
-  },
-};
-
-const started = performance.now();
-const result = await triageIssue(
-  { ...fixture.issue, authorIsBot: false },
-  { tracker, model, log },
-  { ...config.triage, dryRun: true },
-);
-const seconds = ((performance.now() - started) / 1000).toFixed(1);
-
-console.log(`\n#${fixture.issue.number} ${fixture.issue.title}`);
-console.log(`model: ${model.id} (${seconds}s)`);
-if (result.status === 'skipped') {
-  console.log(`skipped: ${result.reason}`);
-} else {
-  const { plan } = result;
-  console.log(`category: ${plan.category} (confidence ${plan.confidence})`);
-  console.log(`labels: ${plan.labels.join(', ') || 'none'}`);
-  console.log(`duplicates: ${plan.duplicates.map((d) => `#${d.number}`).join(', ') || 'none'}`);
-  console.log(plan.comment ? `comment:\n\n${plan.comment}` : 'comment: none');
+// Bad flags, a missing key or an unreachable model are the usual failures
+// here, and the message says more than a stack trace would.
+try {
+  await main();
+} catch (error) {
+  console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
 }
