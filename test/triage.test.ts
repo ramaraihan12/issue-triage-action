@@ -58,7 +58,7 @@ const goodAnswer = {
   confidence: 0.92,
   labels: ['bug', 'area: cli', 'priority: high', 'duplicate'],
   duplicates: [12, 99],
-  missing_info: ['the version you are running'],
+  missing_info: ['version'],
 };
 
 beforeEach(() => vi.clearAllMocks());

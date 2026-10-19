@@ -6,7 +6,7 @@ const valid = {
   confidence: 0.9,
   labels: ['bug'],
   duplicates: [12],
-  missing_info: ['the version you are running'],
+  missing_info: ['version'],
 };
 
 describe('parseVerdict', () => {
@@ -22,6 +22,13 @@ describe('parseVerdict', () => {
   it('accepts issue numbers written as strings', () => {
     const result = parseVerdict(JSON.stringify({ ...valid, duplicates: ['#12', '7'] }));
     expect(result.ok && result.verdict.duplicates).toEqual([12, 7]);
+  });
+
+  it('drops missing_info values it does not know', () => {
+    const result = parseVerdict(
+      JSON.stringify({ ...valid, missing_info: ['logs', 'your Node.js/npm versions', 'logs'] }),
+    );
+    expect(result.ok && result.verdict.missing_info).toEqual(['logs']);
   });
 
   it.each([

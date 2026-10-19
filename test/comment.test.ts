@@ -42,9 +42,6 @@ describe('sanitize', () => {
 describe('renderComment', () => {
   it('returns null when there is nothing useful to say', () => {
     expect(renderComment({ category: 'bug', duplicates: [], missingInfo: [] })).toBeNull();
-    expect(
-      renderComment({ category: 'bug', duplicates: [], missingInfo: ['  ', '<>'] }),
-    ).toBeNull();
   });
 
   it('points at a single likely duplicate', () => {
@@ -66,10 +63,12 @@ describe('renderComment', () => {
         { number: 3, title: 'Dark mode', body: '' },
         { number: 9, title: 'Theme support', body: '' },
       ],
-      missingInfo: ['which screens you mean', 'a mockup @maintainer'],
+      missingInfo: ['version', 'expected_vs_actual'],
     });
     expect(body).toContain('a feature request');
     expect(body).toContain('- #3 Dark mode\n- #9 Theme support');
-    expect(body).toContain('could you add:\n- which screens you mean\n- a mockup maintainer');
+    expect(body).toContain(
+      'could you add:\n- the version you are running\n- what you expected to happen and what happened instead',
+    );
   });
 });

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CATEGORIES } from './types';
+import { CATEGORIES, MISSING_INFO } from './types';
 
 const issueNumber = z.union([
   z.number().int().positive(),
@@ -9,12 +9,22 @@ const issueNumber = z.union([
     .transform((value) => Number(value.replace('#', ''))),
 ]);
 
+const isMissingInfo = (value: string): boolean =>
+  (MISSING_INFO as readonly string[]).includes(value);
+
 const verdictSchema = z.object({
   category: z.enum(CATEGORIES),
   confidence: z.number().min(0).max(1),
   labels: z.array(z.string()),
   duplicates: z.array(issueNumber),
-  missing_info: z.array(z.string()),
+  // Unknown values are dropped rather than failing the whole verdict.
+  missing_info: z
+    .array(z.string())
+    .transform((items) => [
+      ...new Set(
+        items.filter((item): item is (typeof MISSING_INFO)[number] => isMissingInfo(item)),
+      ),
+    ]),
 });
 
 export type Verdict = z.infer<typeof verdictSchema>;

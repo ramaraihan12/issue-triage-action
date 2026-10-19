@@ -1,4 +1,4 @@
-import type { Category, IssueSummary } from './types';
+import type { Category, IssueSummary, MissingInfo } from './types';
 
 // Hidden in every comment the action posts, so a re-run can tell it already spoke.
 export const MARKER = '<!-- issue-triage-action -->';
@@ -10,11 +10,22 @@ const CATEGORY_PHRASE: Record<Category, string> = {
   docs: 'a docs issue',
 };
 
-// Model output ends up in a public comment, so strip anything that could ping
-// people, inject HTML or smuggle in links. GitHub autolinks http(s):// and www.
-// hosts, and mail clients showing the notification also link bare domains, so
-// anything shaped like host/path goes too. Issue references are dropped because
-// GitHub posts a cross-reference on the issue they point to, in any repo.
+// What the bot asks for. The model only picks keys, so its own wording never
+// reaches a public comment.
+const ASK: Record<MissingInfo, string> = {
+  version: 'the version you are running',
+  steps: 'steps to reproduce it',
+  logs: 'any error output or logs',
+  os: 'your operating system',
+  expected_vs_actual: 'what you expected to happen and what happened instead',
+};
+
+// Issue titles come from other users and end up in the comment, so strip
+// anything that could ping people, inject HTML or smuggle in links. GitHub
+// autolinks http(s):// and www. hosts, and mail clients showing the
+// notification also link bare domains, so anything shaped like host/path goes
+// too. Issue references are dropped because GitHub posts a cross-reference on
+// the issue they point to, in any repo.
 export function sanitize(text: string, maxLength = 140): string {
   const clean = text
     .replace(/(?:https?:\/\/|\bwww\.)\S+/gi, '')
@@ -31,14 +42,13 @@ export function sanitize(text: string, maxLength = 140): string {
 export interface CommentInput {
   category: Category;
   duplicates: IssueSummary[];
-  missingInfo: string[];
+  missingInfo: MissingInfo[];
 }
 
 // Returns null when there is nothing worth saying; a comment that only repeats
 // the labels is noise in the author's notifications.
 export function renderComment({ category, duplicates, missingInfo }: CommentInput): string | null {
-  const asks = missingInfo.map((item) => sanitize(item)).filter((item) => item.length > 0);
-  if (duplicates.length === 0 && asks.length === 0) return null;
+  if (duplicates.length === 0 && missingInfo.length === 0) return null;
 
   const parts = [MARKER, `Thanks for opening this. It reads like ${CATEGORY_PHRASE[category]}.`];
 
@@ -52,8 +62,8 @@ export function renderComment({ category, duplicates, missingInfo }: CommentInpu
     parts.push(`These open issues look similar, so it may already be tracked:\n${list}`);
   }
 
-  if (asks.length > 0) {
-    const list = asks.map((item) => `- ${item}`).join('\n');
+  if (missingInfo.length > 0) {
+    const list = missingInfo.map((item) => `- ${ASK[item]}`).join('\n');
     parts.push(`To make it easier for someone to pick this up, could you add:\n${list}`);
   }
 

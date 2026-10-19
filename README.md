@@ -36,7 +36,7 @@ It might be the same as #96 (Build crashes with ENOENT when the project path con
 - Narrows those issues to at most 5 duplicate candidates with TF-IDF and cosine similarity, computed inside the action. No embeddings, see Notes.
 - One model call returns JSON, which is checked with zod. If the JSON is broken, has the wrong shape, an unknown category, or the confidence is under `min-confidence`, the action does nothing at all. A missing label is better than a wrong one.
 - Labels are matched against the repo's real labels, anything made up is dropped, max 3. The label for the category (`bug`, `enhancement`, `question`, `documentation`) is added if the repo has it.
-- It only comments when there is something worth saying (a likely duplicate or missing details). Model text is stripped of links, @mentions, issue references and markup before it goes into the comment.
+- It only comments when there is something worth saying (a likely duplicate or missing details). The model only picks what to ask for from a fixed list (version, steps, logs, os, expected vs actual), and duplicate titles are stripped of links, @mentions, issue references and markup before they go into the comment.
 
 ## Use it
 
