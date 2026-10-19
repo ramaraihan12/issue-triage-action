@@ -7,7 +7,7 @@ export interface Prompt {
 
 const MAX_BODY_CHARS = 4000;
 const MAX_CANDIDATE_CHARS = 300;
-const MAX_LABELS = 150;
+const MAX_PROMPT_LABELS = 150;
 
 const SYSTEM = `You triage new GitHub issues for the maintainers of a repository.
 Reply with one JSON object and nothing else. It must have exactly these fields:
@@ -31,7 +31,7 @@ function oneLine(text: string): string {
 
 export function buildPrompt(issue: Issue, labels: RepoLabel[], candidates: IssueSummary[]): Prompt {
   const labelLines = labels
-    .slice(0, MAX_LABELS)
+    .slice(0, MAX_PROMPT_LABELS)
     .map((label) =>
       label.description
         ? `- ${label.name}: ${clip(oneLine(label.description), 100)}`

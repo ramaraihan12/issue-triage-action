@@ -46420,7 +46420,7 @@ function githubTracker(octokit, repo) {
 // src/prompt.ts
 var MAX_BODY_CHARS = 4e3;
 var MAX_CANDIDATE_CHARS = 300;
-var MAX_LABELS = 150;
+var MAX_PROMPT_LABELS = 150;
 var SYSTEM = `You triage new GitHub issues for the maintainers of a repository.
 Reply with one JSON object and nothing else. It must have exactly these fields:
 
@@ -46439,7 +46439,7 @@ function oneLine(text) {
   return text.replace(/\s+/g, " ").trim();
 }
 function buildPrompt(issue3, labels, candidates) {
-  const labelLines = labels.slice(0, MAX_LABELS).map(
+  const labelLines = labels.slice(0, MAX_PROMPT_LABELS).map(
     (label) => label.description ? `- ${label.name}: ${clip(oneLine(label.description), 100)}` : `- ${label.name}`
   );
   const candidateLines = candidates.map(
@@ -46557,7 +46557,7 @@ function parseVerdict(raw) {
 }
 
 // src/triage.ts
-var MAX_LABELS2 = 3;
+var MAX_LABELS = 3;
 var MAX_MISSING_INFO = 3;
 var MAX_CANDIDATES = 5;
 var MIN_SIMILARITY = 0.2;
@@ -46608,7 +46608,7 @@ function resolveLabels(picked, available, current) {
     const label = canonical.get(key);
     if (label && !alreadyOn.has(key)) result.add(label);
   }
-  return [...result].slice(0, MAX_LABELS2);
+  return [...result].slice(0, MAX_LABELS);
 }
 async function triageIssue(issue3, { tracker, model, log }, options) {
   if (issue3.authorIsBot) {
