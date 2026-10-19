@@ -24,6 +24,7 @@ export interface ModelConfig {
   apiKey: string;
   baseUrl: string;
   reasoningEffort: string;
+  timeoutMs: number;
 }
 
 export function createModel(config: ModelConfig): ChatModel {

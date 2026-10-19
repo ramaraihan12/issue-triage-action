@@ -20,7 +20,13 @@ const responseSchema = z.object({
     .optional(),
 });
 
-export function geminiModel({ model, apiKey }: { model: string; apiKey: string }): ChatModel {
+interface GeminiOptions {
+  model: string;
+  apiKey: string;
+  timeoutMs: number;
+}
+
+export function geminiModel({ model, apiKey, timeoutMs }: GeminiOptions): ChatModel {
   const url = `${BASE_URL}/${encodeURIComponent(model)}:generateContent`;
 
   return {
@@ -34,6 +40,7 @@ export function geminiModel({ model, apiKey }: { model: string; apiKey: string }
           contents: [{ role: 'user', parts: [{ text: user }] }],
           generationConfig: { responseMimeType: 'application/json' },
         },
+        { timeoutMs },
       );
 
       const parsed = responseSchema.safeParse(data);

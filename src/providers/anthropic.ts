@@ -9,7 +9,13 @@ const responseSchema = z.object({
   content: z.array(z.object({ type: z.string(), text: z.string().optional() })),
 });
 
-export function anthropicModel({ model, apiKey }: { model: string; apiKey: string }): ChatModel {
+interface AnthropicOptions {
+  model: string;
+  apiKey: string;
+  timeoutMs: number;
+}
+
+export function anthropicModel({ model, apiKey, timeoutMs }: AnthropicOptions): ChatModel {
   return {
     id: `anthropic:${model}`,
     async complete({ system, user }) {
@@ -17,6 +23,7 @@ export function anthropicModel({ model, apiKey }: { model: string; apiKey: strin
         MESSAGES_URL,
         { 'x-api-key': apiKey, 'anthropic-version': API_VERSION },
         { model, max_tokens: 1024, system, messages: [{ role: 'user', content: user }] },
+        { timeoutMs },
       );
 
       const parsed = responseSchema.safeParse(data);

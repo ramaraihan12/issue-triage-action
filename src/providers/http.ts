@@ -13,7 +13,7 @@ const DEFAULT_RETRY_DELAY_MS = 2_000;
 const MAX_RETRY_DELAY_MS = 30_000;
 
 export interface PostOptions {
-  timeoutMs?: number;
+  timeoutMs: number;
   retries?: number;
 }
 
@@ -33,7 +33,7 @@ export async function postJson(
   url: string,
   headers: Record<string, string>,
   body: unknown,
-  { timeoutMs = 120_000, retries = 1 }: PostOptions = {},
+  { timeoutMs, retries = 1 }: PostOptions,
 ): Promise<unknown> {
   const host = new URL(url).host;
 

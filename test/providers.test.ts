@@ -34,6 +34,7 @@ const base: ModelConfig = {
   apiKey: 'k',
   baseUrl: 'https://api.openai.com/v1',
   reasoningEffort: '',
+  timeoutMs: 5_000,
 };
 
 afterEach(() => {
@@ -165,6 +166,18 @@ describe('http errors', () => {
     });
     await vi.advanceTimersByTimeAsync(2_000);
     await assertion;
+  });
+
+  it('reports a timeout without retrying', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockRejectedValue(new DOMException('The operation timed out.', 'TimeoutError'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(createModel(base).complete(prompt)).rejects.toThrow(
+      'api.openai.com did not answer within 5s',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not retry a 401', async () => {

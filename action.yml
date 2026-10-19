@@ -22,6 +22,10 @@ inputs:
   reasoning-effort:
     description: Sent as reasoning_effort with the openai provider. "none" turns thinking off on models that allow it.
     required: false
+  timeout-seconds:
+    description: How long to wait for the model before failing the step. Raise it for slow self-hosted models.
+    required: false
+    default: '120'
   mode:
     description: comment (labels plus at most one comment) or labels (labels only).
     required: false

@@ -49,6 +49,13 @@ export function readConfig(getInput: GetInput): Config {
     );
   }
 
+  const timeoutSeconds = Number(input('timeout-seconds') || '120');
+  if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+    throw new Error(
+      `timeout-seconds must be a positive number (got "${input('timeout-seconds')}")`,
+    );
+  }
+
   const rawIssueNumber = input('issue-number');
   const issueNumber = rawIssueNumber ? Number(rawIssueNumber) : null;
   if (issueNumber !== null && (!Number.isInteger(issueNumber) || issueNumber <= 0)) {
@@ -64,6 +71,7 @@ export function readConfig(getInput: GetInput): Config {
       apiKey,
       baseUrl: baseUrl || DEFAULT_OPENAI_BASE_URL,
       reasoningEffort: input('reasoning-effort'),
+      timeoutMs: timeoutSeconds * 1000,
     },
     triage: {
       mode: oneOf('mode', MODES, input('mode') || 'comment'),

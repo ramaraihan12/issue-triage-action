@@ -18,6 +18,7 @@ describe('readConfig', () => {
         apiKey: 'secret',
         baseUrl: 'https://api.openai.com/v1',
         reasoningEffort: '',
+        timeoutMs: 120_000,
       },
       triage: { mode: 'comment', dryRun: false, minConfidence: 0.6 },
     });
@@ -34,6 +35,7 @@ describe('readConfig', () => {
         'dry-run': 'TRUE',
         'min-confidence': '0.75',
         'issue-number': '17',
+        'timeout-seconds': '600',
       }),
     );
 
@@ -43,6 +45,7 @@ describe('readConfig', () => {
       baseUrl: 'http://localhost:11434/v1',
       model: 'qwen3.5-9b:iq4xs',
       reasoningEffort: 'none',
+      timeoutMs: 600_000,
     });
     expect(config.triage).toEqual({ mode: 'labels', dryRun: true, minConfidence: 0.75 });
     expect(config.issueNumber).toBe(17);
@@ -60,6 +63,7 @@ describe('readConfig', () => {
       'min-confidence must be a number between 0 and 1',
     ],
     [{ 'api-key': 'k', 'issue-number': '-3' }, 'issue-number must be a positive integer'],
+    [{ 'api-key': 'k', 'timeout-seconds': '0' }, 'timeout-seconds must be a positive number'],
   ])('rejects %o', (values, message) => {
     expect(() => readConfig(inputs(values))).toThrow(message);
   });
