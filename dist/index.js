@@ -46101,7 +46101,7 @@ function retryDelay(response) {
 function wait(ms) {
   return new Promise((resolve2) => setTimeout(resolve2, ms));
 }
-async function postJson(url2, headers, body, { timeoutMs = 12e4, retries = 1 } = {}) {
+async function postJson(url2, headers, body, { timeoutMs, retries = 1 }) {
   const host = new URL(url2).host;
   for (let attempt = 0; ; attempt++) {
     let response;
@@ -46145,14 +46145,15 @@ var API_VERSION = "2023-06-01";
 var responseSchema = external_exports.object({
   content: external_exports.array(external_exports.object({ type: external_exports.string(), text: external_exports.string().optional() }))
 });
-function anthropicModel({ model, apiKey }) {
+function anthropicModel({ model, apiKey, timeoutMs }) {
   return {
     id: `anthropic:${model}`,
     async complete({ system, user }) {
       const data = await postJson(
         MESSAGES_URL,
         { "x-api-key": apiKey, "anthropic-version": API_VERSION },
-        { model, max_tokens: 1024, system, messages: [{ role: "user", content: user }] }
+        { model, max_tokens: 1024, system, messages: [{ role: "user", content: user }] },
+        { timeoutMs }
       );
       const parsed = responseSchema.safeParse(data);
       if (!parsed.success) throw new ProviderError("unexpected messages API response shape");
@@ -46174,7 +46175,7 @@ var responseSchema2 = external_exports.object({
     })
   ).optional()
 });
-function geminiModel({ model, apiKey }) {
+function geminiModel({ model, apiKey, timeoutMs }) {
   const url2 = `${BASE_URL}/${encodeURIComponent(model)}:generateContent`;
   return {
     id: `gemini:${model}`,
@@ -46186,7 +46187,8 @@ function geminiModel({ model, apiKey }) {
           systemInstruction: { parts: [{ text: system }] },
           contents: [{ role: "user", parts: [{ text: user }] }],
           generationConfig: { responseMimeType: "application/json" }
-        }
+        },
+        { timeoutMs }
       );
       const parsed = responseSchema2.safeParse(data);
       if (!parsed.success) throw new ProviderError("unexpected generateContent response shape");
@@ -46200,20 +46202,31 @@ function geminiModel({ model, apiKey }) {
 var responseSchema3 = external_exports.object({
   choices: external_exports.array(external_exports.object({ message: external_exports.object({ content: external_exports.string().nullable().optional() }) })).min(1)
 });
-function openaiModel({ model, apiKey, baseUrl: baseUrl2, reasoningEffort }) {
+function openaiModel({
+  model,
+  apiKey,
+  baseUrl: baseUrl2,
+  reasoningEffort,
+  timeoutMs
+}) {
   const url2 = `${baseUrl2.replace(/\/+$/, "")}/chat/completions`;
   return {
     id: `openai:${model}`,
     async complete({ system, user }) {
-      const data = await postJson(url2, apiKey ? { authorization: `Bearer ${apiKey}` } : {}, {
-        model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user }
-        ],
-        response_format: { type: "json_object" },
-        ...reasoningEffort ? { reasoning_effort: reasoningEffort } : {}
-      });
+      const data = await postJson(
+        url2,
+        apiKey ? { authorization: `Bearer ${apiKey}` } : {},
+        {
+          model,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user }
+          ],
+          response_format: { type: "json_object" },
+          ...reasoningEffort ? { reasoning_effort: reasoningEffort } : {}
+        },
+        { timeoutMs }
+      );
       const parsed = responseSchema3.safeParse(data);
       if (!parsed.success) throw new ProviderError("unexpected chat completions response shape");
       return parsed.data.choices[0]?.message.content ?? "";
@@ -46270,6 +46283,12 @@ function readConfig(getInput2) {
       `min-confidence must be a number between 0 and 1 (got "${input2("min-confidence")}")`
     );
   }
+  const timeoutSeconds = Number(input2("timeout-seconds") || "120");
+  if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+    throw new Error(
+      `timeout-seconds must be a positive number (got "${input2("timeout-seconds")}")`
+    );
+  }
   const rawIssueNumber = input2("issue-number");
   const issueNumber2 = rawIssueNumber ? Number(rawIssueNumber) : null;
   if (issueNumber2 !== null && (!Number.isInteger(issueNumber2) || issueNumber2 <= 0)) {
@@ -46283,7 +46302,8 @@ function readConfig(getInput2) {
       model: input2("model") || DEFAULT_MODELS[provider],
       apiKey,
       baseUrl: baseUrl2 || DEFAULT_OPENAI_BASE_URL,
-      reasoningEffort: input2("reasoning-effort")
+      reasoningEffort: input2("reasoning-effort"),
+      timeoutMs: timeoutSeconds * 1e3
     },
     triage: {
       mode: oneOf("mode", MODES, input2("mode") || "comment"),
@@ -46487,19 +46507,16 @@ function cosine(a, b) {
 function rankBySimilarity(query, docs, options) {
   const queryCounts = termCounts(tokenize(query));
   if (queryCounts.size === 0 || docs.length === 0) return [];
-  const docCounts = docs.map((doc) => termCounts(tokenize(doc.text)));
+  const docTerms = docs.map((doc) => ({ id: doc.id, counts: termCounts(tokenize(doc.text)) }));
   const total = docs.length + 1;
   const docFrequency = /* @__PURE__ */ new Map();
-  for (const counts of [queryCounts, ...docCounts]) {
+  for (const counts of [queryCounts, ...docTerms.map((doc) => doc.counts)]) {
     for (const term of counts.keys()) docFrequency.set(term, (docFrequency.get(term) ?? 0) + 1);
   }
   const idf = /* @__PURE__ */ new Map();
   for (const [term, df] of docFrequency) idf.set(term, Math.log((total + 1) / (df + 1)) + 1);
   const queryVector = weigh(queryCounts, idf);
-  return docs.map((doc, i) => ({
-    id: doc.id,
-    score: cosine(queryVector, weigh(docCounts[i] ?? /* @__PURE__ */ new Map(), idf))
-  })).filter((match) => match.score >= options.minScore).sort((a, b) => b.score - a.score).slice(0, options.limit);
+  return docTerms.map((doc) => ({ id: doc.id, score: cosine(queryVector, weigh(doc.counts, idf)) })).filter((match) => match.score >= options.minScore).sort((a, b) => b.score - a.score).slice(0, options.limit);
 }
 
 // src/types.ts
