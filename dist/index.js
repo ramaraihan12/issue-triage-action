@@ -46322,7 +46322,7 @@ var CATEGORY_PHRASE = {
   docs: "a docs issue"
 };
 function sanitize(text, maxLength = 140) {
-  const clean = text.replace(/(?:https?:\/\/|\bwww\.)\S+/gi, "").replace(/\b[\w-]+(?:\.[\w-]+)+\/\S*/g, "").replace(/[<>[\]`*_|]/g, "").replace(/@(?=[\w-])/g, "").replace(/\s+/g, " ").trim();
+  const clean = text.replace(/(?:https?:\/\/|\bwww\.)\S+/gi, "").replace(/\b[\w-]+(?:\.[\w-]+)+\/\S*/g, "").replace(/&#?\w+;/g, "").replace(/(?:\b[\w.-]+\/[\w.-]+)?#\d+\b|\bgh-\d+\b/gi, "").replace(/[<>[\]`*_|]/g, "").replace(/@(?=[\w-])/g, "").replace(/\s+/g, " ").trim();
   return clean.length <= maxLength ? clean : `${clean.slice(0, maxLength - 3).trimEnd()}...`;
 }
 function renderComment({ category, duplicates, missingInfo }) {

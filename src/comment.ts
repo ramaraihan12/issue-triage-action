@@ -13,11 +13,14 @@ const CATEGORY_PHRASE: Record<Category, string> = {
 // Model output ends up in a public comment, so strip anything that could ping
 // people, inject HTML or smuggle in links. GitHub autolinks http(s):// and www.
 // hosts, and mail clients showing the notification also link bare domains, so
-// anything shaped like host/path goes too.
+// anything shaped like host/path goes too. Issue references are dropped because
+// GitHub posts a cross-reference on the issue they point to, in any repo.
 export function sanitize(text: string, maxLength = 140): string {
   const clean = text
     .replace(/(?:https?:\/\/|\bwww\.)\S+/gi, '')
     .replace(/\b[\w-]+(?:\.[\w-]+)+\/\S*/g, '')
+    .replace(/&#?\w+;/g, '')
+    .replace(/(?:\b[\w.-]+\/[\w.-]+)?#\d+\b|\bgh-\d+\b/gi, '')
     .replace(/[<>[\]`*_|]/g, '')
     .replace(/@(?=[\w-])/g, '')
     .replace(/\s+/g, ' ')

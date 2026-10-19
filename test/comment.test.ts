@@ -15,6 +15,13 @@ describe('sanitize', () => {
     expect(sanitize('see WWW.evil-example.com or evil-example.com/fix?x=1')).toBe('see or');
   });
 
+  it('drops issue references and html entities', () => {
+    expect(sanitize('see torvalds/linux#1 and #12 or GH-7 for details')).toBe(
+      'see and or for details',
+    );
+    expect(sanitize('ping &#64;octocat or &#x40;hubot')).toBe('ping octocat or hubot');
+  });
+
   it('keeps file names and paths', () => {
     expect(sanitize('your mdsite.config.yml and the files under content/blog')).toBe(
       'your mdsite.config.yml and the files under content/blog',
