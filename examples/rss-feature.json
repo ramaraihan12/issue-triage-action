@@ -1,0 +1,40 @@
+{
+  "issue": {
+    "number": 105,
+    "title": "Generate an RSS feed for the blog section",
+    "author": "lina-w",
+    "body": "I'd like mdsite to write a feed.xml for pages under content/blog, newest first, using the title, date and summary from front matter. Right now I generate it with a separate script after every build. A `feed: true` option in mdsite.config.yml would be enough for me."
+  },
+  "labels": [
+    { "name": "bug", "description": "Something isn't working" },
+    { "name": "documentation", "description": "Improvements or additions to documentation" },
+    { "name": "duplicate", "description": "This issue or pull request already exists" },
+    { "name": "enhancement", "description": "New feature or request" },
+    { "name": "question", "description": "Further information is requested" },
+    { "name": "area: cli", "description": "The mdsite command and its flags" },
+    { "name": "area: build", "description": "Markdown parsing and the build pipeline" },
+    { "name": "area: themes", "description": "Built-in and custom themes" }
+  ],
+  "openIssues": [
+    {
+      "number": 98,
+      "title": "Render mermaid code blocks as diagrams",
+      "body": "It would be nice if ```mermaid blocks were rendered as diagrams instead of plain code."
+    },
+    {
+      "number": 90,
+      "title": "Dark mode for the default theme",
+      "body": "A prefers-color-scheme dark variant of the default theme would be great."
+    },
+    {
+      "number": 88,
+      "title": "Sitemap includes draft pages",
+      "body": "Pages with draft: true in front matter are left out of the build but still listed in sitemap.xml."
+    },
+    {
+      "number": 74,
+      "title": "Allow custom CSS per page",
+      "body": "A css: field in front matter that adds a stylesheet only to that page."
+    }
+  ]
+}

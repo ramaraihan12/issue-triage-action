@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "triage:local": "tsx scripts/triage-local.ts"
   },
   "dependencies": {
     "@actions/core": "3.0.1",

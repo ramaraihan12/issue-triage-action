@@ -1,0 +1,73 @@
+{
+  "issue": {
+    "number": 104,
+    "title": "mdsite build fails with 'no such file or directory' on my Windows machine",
+    "author": "kwame-dev",
+    "body": "I just installed mdsite and tried to build the starter site.\n\n```\n> mdsite build\nError: ENOENT: no such file or directory, open 'D:\\Projects\\Client%20Work\\site\\content\\about.md'\n    at async open (node:internal/fs/promises:639:25)\n    at async readPage (file:///C:/Users/kwame/AppData/Roaming/npm/node_modules/mdsite/dist/build.js:88:16)\n```\n\nThe file is definitely there. The same project builds fine on my Mac."
+  },
+  "labels": [
+    { "name": "bug", "description": "Something isn't working" },
+    { "name": "documentation", "description": "Improvements or additions to documentation" },
+    { "name": "duplicate", "description": "This issue or pull request already exists" },
+    { "name": "enhancement", "description": "New feature or request" },
+    { "name": "good first issue", "description": "Good for newcomers" },
+    { "name": "help wanted", "description": "Extra attention is needed" },
+    { "name": "question", "description": "Further information is requested" },
+    { "name": "area: cli", "description": "The mdsite command and its flags" },
+    { "name": "area: build", "description": "Markdown parsing and the build pipeline" },
+    { "name": "area: themes", "description": "Built-in and custom themes" },
+    { "name": "platform: windows", "description": "Only happens on Windows" }
+  ],
+  "openIssues": [
+    {
+      "number": 101,
+      "title": "Live reload stops after editing a theme partial",
+      "body": "With mdsite serve running, editing anything under themes/default/partials stops live reload until I restart the server."
+    },
+    {
+      "number": 98,
+      "title": "Render mermaid code blocks as diagrams",
+      "body": "It would be nice if ```mermaid blocks were rendered as diagrams instead of plain code."
+    },
+    {
+      "number": 96,
+      "title": "Build crashes with ENOENT when the project path contains spaces",
+      "body": "On Windows 11, running mdsite build in C:\\Users\\me\\My Sites\\blog fails with Error: ENOENT: no such file or directory, open 'C:\\Users\\me\\My%20Sites\\blog\\content\\index.md'. Moving the folder to a path without spaces fixes it. Looks like the path is URL-encoded somewhere."
+    },
+    {
+      "number": 93,
+      "title": "How do I set a base URL for GitHub Pages?",
+      "body": "My site lives at user.github.io/blog and all links point to the root. Is there a config option for this?"
+    },
+    {
+      "number": 90,
+      "title": "Dark mode for the default theme",
+      "body": "A prefers-color-scheme dark variant of the default theme would be great."
+    },
+    {
+      "number": 88,
+      "title": "Sitemap includes draft pages",
+      "body": "Pages with draft: true in front matter are left out of the build but still listed in sitemap.xml."
+    },
+    {
+      "number": 85,
+      "title": "mdsite new ignores the --template flag",
+      "body": "mdsite new my-site --template docs always creates the blog template."
+    },
+    {
+      "number": 81,
+      "title": "Front matter dates are shown a day early",
+      "body": "date: 2026-03-04 renders as March 3 for me in UTC-5. Dates seem to be parsed as UTC midnight."
+    },
+    {
+      "number": 77,
+      "title": "File watcher uses 100% CPU on Windows",
+      "body": "mdsite serve pegs one core on Windows 10 even when nothing changes. Fine on Linux."
+    },
+    {
+      "number": 74,
+      "title": "Allow custom CSS per page",
+      "body": "A css: field in front matter that adds a stylesheet only to that page."
+    }
+  ]
+}
