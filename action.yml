@@ -1,0 +1,59 @@
+name: Issue Triage with LLMs
+description: Labels new issues from your existing labels, points out likely duplicates and asks for missing details in one short comment.
+author: Rama Raihan
+branding:
+  icon: tag
+  color: blue
+
+inputs:
+  api-key:
+    description: API key for the provider. Can be left empty for a local OpenAI-compatible server such as Ollama.
+    required: false
+  provider:
+    description: gemini, openai or anthropic. openai also covers any OpenAI-compatible API through base-url.
+    required: false
+    default: gemini
+  model:
+    description: Model name. Defaults to gemini-3.5-flash-lite, gpt-6-luna or claude-haiku-5-5 depending on the provider.
+    required: false
+  base-url:
+    description: Base URL for the openai provider, for example https://openrouter.ai/api/v1 or http://localhost:11434/v1.
+    required: false
+  reasoning-effort:
+    description: Sent as reasoning_effort with the openai provider. "none" turns thinking off on models that allow it.
+    required: false
+  mode:
+    description: comment (labels plus at most one comment) or labels (labels only).
+    required: false
+    default: comment
+  dry-run:
+    description: Work out the labels and comment, log them and set the outputs, but don't touch the issue.
+    required: false
+    default: 'false'
+  min-confidence:
+    description: Leave the issue alone when the model's confidence in the category is below this (0 to 1).
+    required: false
+    default: '0.6'
+  issue-number:
+    description: Triage this issue instead of the one in the event payload. Useful with workflow_dispatch.
+    required: false
+  github-token:
+    description: Token used to read the repo and write labels and comments.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  status:
+    description: triaged, dry-run or skipped.
+  category:
+    description: bug, feature, question or docs.
+  labels:
+    description: Comma-separated labels that were added (or would be, in dry-run).
+  duplicates:
+    description: Comma-separated numbers of likely duplicate issues.
+  comment:
+    description: The comment that was posted (or would be). Empty when there was nothing worth saying.
+
+runs:
+  using: node24
+  main: dist/index.js
