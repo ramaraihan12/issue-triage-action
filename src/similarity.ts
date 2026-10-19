@@ -74,23 +74,20 @@ export function rankBySimilarity(
   const queryCounts = termCounts(tokenize(query));
   if (queryCounts.size === 0 || docs.length === 0) return [];
 
-  const docCounts = docs.map((doc) => termCounts(tokenize(doc.text)));
+  const docTerms = docs.map((doc) => ({ id: doc.id, counts: termCounts(tokenize(doc.text)) }));
 
   // The query counts as a document too, so every query term has a defined idf.
   const total = docs.length + 1;
   const docFrequency = new Map<string, number>();
-  for (const counts of [queryCounts, ...docCounts]) {
+  for (const counts of [queryCounts, ...docTerms.map((doc) => doc.counts)]) {
     for (const term of counts.keys()) docFrequency.set(term, (docFrequency.get(term) ?? 0) + 1);
   }
   const idf = new Map<string, number>();
   for (const [term, df] of docFrequency) idf.set(term, Math.log((total + 1) / (df + 1)) + 1);
 
   const queryVector = weigh(queryCounts, idf);
-  return docs
-    .map((doc, i) => ({
-      id: doc.id,
-      score: cosine(queryVector, weigh(docCounts[i] ?? new Map(), idf)),
-    }))
+  return docTerms
+    .map((doc) => ({ id: doc.id, score: cosine(queryVector, weigh(doc.counts, idf)) }))
     .filter((match) => match.score >= options.minScore)
     .sort((a, b) => b.score - a.score)
     .slice(0, options.limit);

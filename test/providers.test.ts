@@ -19,11 +19,12 @@ function stubFetch(...responses: Response[]) {
 }
 
 function lastRequest(fetchMock: ReturnType<typeof stubFetch>) {
+  // postJson always passes a string URL and a JSON string body.
   const [url, init] = fetchMock.mock.calls.at(-1) ?? [];
   return {
-    url: String(url),
+    url: url as string,
     headers: init?.headers as Record<string, string>,
-    body: JSON.parse(String(init?.body)) as Record<string, unknown>,
+    body: JSON.parse(init?.body as string) as Record<string, unknown>,
   };
 }
 
