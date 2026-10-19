@@ -32,7 +32,7 @@ It might be the same as #96 (Build crashes with ENOENT when the project path con
 ## How it works
 
 - Skips issues opened by bots, and issues that already have a comment with the hidden `<!-- issue-triage-action -->` marker. That marker is how it never comments twice, even if the workflow re-runs.
-- Reads the repo's labels (minus maintainer-only ones like `duplicate`, `wontfix`, `good first issue`) and the 100 newest open issues.
+- Reads the repo's labels (minus maintainer-only ones like `duplicate`, `wontfix`, `good first issue`) and the 100 newest open issues and PRs (one API page), then drops the PRs.
 - Narrows those issues to at most 5 duplicate candidates with TF-IDF and cosine similarity, computed inside the action. No embeddings, see Notes.
 - One model call returns JSON, which is checked with zod. If the JSON is broken, has the wrong shape, an unknown category, or the confidence is under `min-confidence`, the action does nothing at all. A missing label is better than a wrong one.
 - Labels are matched against the repo's real labels, anything made up is dropped, max 3. The label for the category (`bug`, `enhancement`, `question`, `documentation`) is added if the repo has it.
@@ -117,6 +117,6 @@ Octokit, `@actions/core` and the model are all faked, so tests run offline with 
 ## Notes
 
 - The plan was to default to GitHub Models, because it ran on the workflow's own `GITHUB_TOKEN` for free (and had free embeddings too). GitHub retired it on July 30, 2026, so the default is Gemini's free tier, which does need a key.
-- Duplicate search is lexical only. TF-IDF matches "Build fails with ENOENT when the path has spaces" to #96 easily, but the same bug written as "Can't open files in folders with blanks" scores under the cutoff and is missed. Embeddings would catch it, at the cost of embedding every open issue on each run or keeping a cache somewhere. It also only looks at the 100 newest open issues.
+- Duplicate search is lexical only. TF-IDF matches "Build fails with ENOENT when the path has spaces" to #96 easily, but the same bug written as "Can't open files in folders with blanks" scores under the cutoff and is missed. Embeddings would catch it, at the cost of embedding every open issue on each run or keeping a cache somewhere. It also only reads that one page, and open PRs on it take up slots, so on a busy repo an older duplicate is never seen.
 - Small local models are overconfident. The 9B model above reports a confidence of 1 more often than it should, so `min-confidence` is a weak guard with them.
 - An issue that got labels but no comment has no marker, so re-running the workflow on it asks the model again and might comment then. It never removes labels.
