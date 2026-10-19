@@ -46585,6 +46585,20 @@ function findCandidates(issue3, openIssues) {
   );
   return matches.flatMap((match) => others.get(match.id) ?? []);
 }
+var CATEGORY_LABELS = {
+  bug: ["bug", "type: bug", "kind/bug", "type/bug"],
+  feature: ["enhancement", "feature", "feature request", "type: feature", "kind/feature"],
+  question: ["question", "type: question", "kind/question"],
+  docs: ["documentation", "docs", "type: docs", "kind/docs", "kind/documentation"]
+};
+function categoryLabel(category, available) {
+  const byName = new Map(available.map((label) => [label.name.toLowerCase(), label.name]));
+  for (const name of CATEGORY_LABELS[category]) {
+    const label = byName.get(name);
+    if (label) return label;
+  }
+  return null;
+}
 function resolveLabels(picked, available, current) {
   const canonical = new Map(available.map((label) => [label.name.toLowerCase(), label.name]));
   const alreadyOn = new Set(current.map((name) => name.toLowerCase()));
@@ -46634,7 +46648,11 @@ async function triageIssue(issue3, { tracker, model, log }, options) {
   const plan = {
     category: verdict.category,
     confidence: verdict.confidence,
-    labels: resolveLabels(verdict.labels, labels, issue3.labels),
+    labels: resolveLabels(
+      [categoryLabel(verdict.category, labels) ?? [], verdict.labels].flat(),
+      labels,
+      issue3.labels
+    ),
     duplicates,
     comment: options.mode === "comment" ? renderComment({
       category: verdict.category,

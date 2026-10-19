@@ -68,6 +68,24 @@ export function findCandidates(issue: Issue, openIssues: IssueSummary[]): IssueS
   return matches.flatMap((match) => others.get(match.id) ?? []);
 }
 
+// Common names for the type labels. Models often pick only the specific labels
+// ("area: build") and skip the obvious one, so the action adds it itself.
+const CATEGORY_LABELS: Record<Category, string[]> = {
+  bug: ['bug', 'type: bug', 'kind/bug', 'type/bug'],
+  feature: ['enhancement', 'feature', 'feature request', 'type: feature', 'kind/feature'],
+  question: ['question', 'type: question', 'kind/question'],
+  docs: ['documentation', 'docs', 'type: docs', 'kind/docs', 'kind/documentation'],
+};
+
+export function categoryLabel(category: Category, available: RepoLabel[]): string | null {
+  const byName = new Map(available.map((label) => [label.name.toLowerCase(), label.name]));
+  for (const name of CATEGORY_LABELS[category]) {
+    const label = byName.get(name);
+    if (label) return label;
+  }
+  return null;
+}
+
 export function resolveLabels(
   picked: string[],
   available: RepoLabel[],
@@ -133,7 +151,11 @@ export async function triageIssue(
   const plan: TriagePlan = {
     category: verdict.category,
     confidence: verdict.confidence,
-    labels: resolveLabels(verdict.labels, labels, issue.labels),
+    labels: resolveLabels(
+      [categoryLabel(verdict.category, labels) ?? [], verdict.labels].flat(),
+      labels,
+      issue.labels,
+    ),
     duplicates,
     comment:
       options.mode === 'comment'

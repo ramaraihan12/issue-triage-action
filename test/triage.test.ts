@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MARKER } from '../src/comment';
 import type { ChatModel } from '../src/providers';
 import {
+  categoryLabel,
   findCandidates,
   resolveLabels,
   triageIssue,
@@ -80,6 +81,17 @@ describe('resolveLabels', () => {
   });
 });
 
+describe('categoryLabel', () => {
+  it('finds the repo label that matches the category', () => {
+    expect(categoryLabel('bug', repoLabels)).toBe('bug');
+    expect(categoryLabel('feature', repoLabels)).toBe('enhancement');
+    expect(categoryLabel('docs', [{ name: 'Documentation', description: '' }])).toBe(
+      'Documentation',
+    );
+    expect(categoryLabel('question', repoLabels)).toBeNull();
+  });
+});
+
 describe('triageIssue', () => {
   it('labels the issue and posts one comment', async () => {
     const tracker = fakeTracker();
@@ -126,6 +138,15 @@ describe('triageIssue', () => {
     ]);
     expect(tracker.addLabels).not.toHaveBeenCalled();
     expect(tracker.createComment).not.toHaveBeenCalled();
+  });
+
+  it('adds the category label even when the model leaves it out', async () => {
+    const tracker = fakeTracker();
+    const model = fakeModel({ ...goodAnswer, labels: ['area: cli'] });
+
+    await triageIssue(issue, { tracker, model, log }, options);
+
+    expect(tracker.addLabels).toHaveBeenCalledWith(50, ['bug', 'Area: CLI']);
   });
 
   it('does not comment in labels mode', async () => {
