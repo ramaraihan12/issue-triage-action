@@ -56,12 +56,14 @@ jobs:
   triage:
     runs-on: ubuntu-latest
     steps:
-      - uses: ramaraihan12/issue-triage-action@main
+      - uses: ramaraihan12/issue-triage-action@v1
         with:
           api-key: ${{ secrets.GEMINI_API_KEY }}
           # dry-run: true   # log what it would do, touch nothing
           # mode: labels    # never comment
 ```
+
+`@v1` moves with each 1.x release. The action gets `issues: write` and your API key, so pinning it to a full commit SHA is the safer choice if you'd rather review each update yourself.
 
 The default provider is Gemini (`gemini-3.5-flash-lite`), which has a free tier. Get a key at [aistudio.google.com](https://aistudio.google.com/apikey) and save it as the `GEMINI_API_KEY` secret. To use something else, set `provider` and pass that provider's key as `api-key`:
 
